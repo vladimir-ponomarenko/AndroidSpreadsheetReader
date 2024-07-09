@@ -1,6 +1,7 @@
 package com.example.test
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -27,7 +28,9 @@ class SpreadsheetHelper {
 
     suspend fun fetchData(): List<Map<String, String>> {
         val url = "INSERT_HERE_LINK_TO_YOUR_GOOGLE_SPREADSHEET" // Spreadsheet URL
+        Log.d("SpreadsheetHelper", "Sending request to: $url")
         val response = client.get(url).bodyAsText()
+        Log.d("SpreadsheetHelper", "Received response: $response")
         return parseCsv(response)
     }
 
