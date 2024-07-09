@@ -42,10 +42,16 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+    packagingOptions {
+        exclude("META-INF/DEPENDENCIES")
+        exclude("META-INF/LICENSE")
+        exclude("META-INF/LICENSE.txt")
+        exclude("META-INF/license.txt")
+        exclude("META-INF/NOTICE")
+        exclude("META-INF/NOTICE.txt")
+        exclude("META-INF/notice.txt")
+        exclude("META-INF/ASL2.0")
+        exclude("META-INF/*.kotlin_module")
     }
 }
 
@@ -58,7 +64,12 @@ dependencies {
 
     // OpenCSV (для парсинга CSV)
     implementation("com.opencsv:opencsv:5.8")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("com.google.http-client:google-http-client-android:1.42.2")
+    implementation ("com.google.api-client:google-api-client-android:1.33.2")
+    implementation ("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
+    implementation ("com.google.android.gms:play-services-auth:20.2.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
