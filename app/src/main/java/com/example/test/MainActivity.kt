@@ -62,8 +62,8 @@ fun GoogleSheetReaderApp(activity: MainActivity) {
     var sheetData by remember { mutableStateOf<List<List<Any>>?>(null) }
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
-    val spreadsheetId = "ID" // Spreadsheets ID
-    val range = "test!A:K" // Range
+    val spreadsheetId = "1Imz_p7t_jbVG7pvsPKgY-mCmK4Hveob-vgUNJkbokVI" // Spreadsheets ID
+    val range = "test!A:C" // Range
     var selectedAccountName by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
