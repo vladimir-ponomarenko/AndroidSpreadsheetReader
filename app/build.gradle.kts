@@ -62,14 +62,24 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:2.3.4")
     implementation("io.ktor:ktor-client-content-negotiation:2.3.4")
 
+    implementation("com.google.http-client:google-http-client-gson:1.42.3") // Google HTTP Client for JSON
+    implementation("com.google.api-client:google-api-client-android:2.1.1") // Google API Client Library for Java
+
     // OpenCSV (для парсинга CSV)
     implementation("com.opencsv:opencsv:5.8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.http-client:google-http-client-android:1.42.2")
-    implementation ("com.google.api-client:google-api-client-android:1.33.2")
+    implementation ("com.google.api-client:google-api-client-android:2.1.1")
     implementation ("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
-    implementation ("com.google.android.gms:play-services-auth:20.2.0")
+    implementation("com.google.apis:google-api-services-sheets:v4-rev20230626-2.0.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev20220719-2.0.0")
+    implementation ("com.google.android.gms:play-services-auth:21.2.0")
+    // Google API
+    implementation("com.google.api-client:google-api-client-android:2.1.1")
+    implementation("com.google.apis:google-api-services-sheets:v4-rev20230822-2.0.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev20230815-2.0.0")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
