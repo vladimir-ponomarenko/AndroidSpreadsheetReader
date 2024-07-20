@@ -97,14 +97,17 @@ fun TaskScreen(
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
     val spreadsheetId = "ID" // Spreadsheet ID
-    val range = "Sheet$currentLevel!A:L" // Range, adjusted for level
-    var currentRow by remember { mutableStateOf(14) }
+    val range = "Sheet$currentLevel!A:L" // Range, adjusted for level, starting from A2
+    var currentRow by remember { mutableStateOf(2) } // Start from row 2
+    var selectedWordIndex by remember { mutableStateOf(0) }
     var attempts by remember { mutableStateOf(0) }
     var showHint by remember { mutableStateOf(false) }
     var elapsedTime by remember { mutableStateOf(0L) }
     var timerRunning by remember { mutableStateOf(false) }
     var showTranslations by remember { mutableStateOf(false) }
     var selectedAccountName by remember { mutableStateOf("") }
+    var currentWordOptions by remember { mutableStateOf<List<String>>(emptyList()) }
+    var chosenTranslations by remember { mutableStateOf<MutableList<String>>(mutableListOf()) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -130,7 +133,6 @@ fun TaskScreen(
             loadData(context, spreadsheetId, range, selectedAccountName) { data ->
                 sheetData = data
                 isLoading = false
-                showTranslations = true
             }
         }
     }
@@ -195,19 +197,31 @@ fun TaskScreen(
                     Text("Выберите аккаунт Google")
                 } else {
                     if (currentRow <= sheetData!!.size) {
-                        val currentExercise = sheetData!![currentRow - 1]
+                        val currentExercise = sheetData!![currentRow - 2] // Adjust index to start from 0
                         val englishWord = currentExercise[0].toString()
-                        val russianTranslations = currentExercise.subList(1, currentExercise.size - 6)
-                            .filterIsInstance<String>()
-                        val correctTranslationIndex =
-                            currentExercise[currentExercise.size - 6].toString().toIntOrNull() ?: -1
+                        val allTranslations = currentExercise.subList(1, currentExercise.size - 6)
+                            .map { it.toString() }
+                        val correctTranslationIndices =
+                            currentExercise.subList(currentExercise.size - 6, currentExercise.size - 4)
+                                .map { it.toString().toIntOrNull() ?: -1 }
                         val hint = currentExercise[currentExercise.size - 5].toString()
                         val correctAnswer = currentExercise[currentExercise.size - 4].toString()
-                        val userAnswerIndex =
-                            currentExercise[currentExercise.size - 3].toString().toIntOrNull() ?: -1
                         val isAnswerCorrect = currentExercise[currentExercise.size - 2].toString().toBoolean()
                         val userSpentTime =
                             currentExercise[currentExercise.size - 1].toString().toLongOrNull() ?: 0L
+
+                        LaunchedEffect(selectedWordIndex) {
+                            currentWordOptions = if (selectedWordIndex < correctTranslationIndices.size) {
+                                val columnIndex = correctTranslationIndices[selectedWordIndex]
+                                if (columnIndex >= 0 && columnIndex < allTranslations.size) {
+                                    allTranslations[columnIndex].split(",").map { it.trim() }
+                                } else {
+                                    emptyList()
+                                }
+                            } else {
+                                emptyList()
+                            }
+                        }
 
                         if (!showTranslations) {
                             Text(
@@ -224,15 +238,16 @@ fun TaskScreen(
                                 Text("Верно!", color = Color.Green, fontSize = 24.sp)
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Button(onClick = {
-                                    if (currentRow < sheetData!!.size) {
+                                    if (currentRow < sheetData!!.size + 2) {
                                         currentRow++
+                                        selectedWordIndex = 0
+                                        chosenTranslations.clear()
                                         attempts = 0
                                         showHint = false
                                         elapsedTime = 0L
                                         timerRunning = false
                                         showTranslations = false
                                     } else {
-//                                        // Level completed, go to next level or show a message
 //                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
 //                                            Text(
 //                                                "Уровень $currentLevel пройден!",
@@ -246,8 +261,8 @@ fun TaskScreen(
                                 }
                             } else {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-//                                    Text("${elapsedTime / 1000}", fontSize = 24.sp)
                                     Spacer(modifier = Modifier.height(32.dp))
+
                                     if (showHint) {
                                         Text("Подсказка: $hint", fontSize = 18.sp)
                                         Spacer(modifier = Modifier.height(16.dp))
@@ -260,45 +275,41 @@ fun TaskScreen(
                                             Text("Скрыть подсказку")
                                         }
                                     } else {
-                                        russianTranslations.forEachIndexed { index, translation ->
-                                            Text(translation, modifier = Modifier
-                                                .padding(8.dp)
-                                                .clickable {
-                                                    coroutineScope.launch {
-                                                        if (index == correctTranslationIndex) {
-                                                            // Correct answer
+                                        currentWordOptions.forEachIndexed { index, translation ->
+                                            Text(
+                                                translation,
+                                                modifier = Modifier
+                                                    .padding(8.dp)
+                                                    .clickable {
+                                                        coroutineScope.launch {
+                                                            val correctIndex = correctTranslationIndices[selectedWordIndex]
+                                                            val isCorrect = index == correctIndex
+
+                                                            // Update spreadsheet with user answer
                                                             updateSpreadsheet(
                                                                 context,
                                                                 spreadsheetId,
                                                                 currentRow,
                                                                 index + 1,
-                                                                true,
+                                                                isCorrect,
                                                                 elapsedTime,
-                                                                selectedAccountName
+                                                                selectedAccountName,
+                                                                currentLevel
+
                                                             )
-                                                            loadData(
-                                                                context,
-                                                                spreadsheetId,
-                                                                range,
-                                                                selectedAccountName
-                                                            ) { data ->
-                                                                sheetData = data
+
+                                                            if (isCorrect) {
+                                                                chosenTranslations.add(translation)
+                                                                selectedWordIndex++
+                                                                attempts = 0
+                                                                showHint = false
+                                                            } else {
+                                                                attempts++
+                                                                if (attempts >= 2) {
+                                                                    showHint = true
+                                                                }
                                                             }
-                                                        } else {
-                                                            // Incorrect answer
-                                                            attempts++
-                                                            if (attempts >= 2) {
-                                                                showHint = true
-                                                            }
-                                                            updateSpreadsheet(
-                                                                context,
-                                                                spreadsheetId,
-                                                                currentRow,
-                                                                index + 1,
-                                                                false,
-                                                                elapsedTime,
-                                                                selectedAccountName
-                                                            )
+
                                                             loadData(
                                                                 context,
                                                                 spreadsheetId,
@@ -309,16 +320,26 @@ fun TaskScreen(
                                                             }
                                                         }
                                                     }
-                                                })
+                                            )
                                         }
                                     }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = chosenTranslations.joinToString(separator = " "),
+                                        fontSize = 24.sp,
+                                        color = Color.Blue
+                                    )
                                 }
                             }
                         }
                     } else {
-                        // Level completed, show a message or allow going to the next level
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Уровень $currentLevel пройден!", color = Color.Green, fontSize = 24.sp)
+                            Text(
+                                "Уровень $currentLevel пройден!",
+                                color = Color.Green,
+                                fontSize = 24.sp
+                            )
                         }
                     }
                 }
@@ -402,7 +423,8 @@ private suspend fun updateSpreadsheet(
     selectedAnswerIndex: Int,
     isAnswerCorrect: Boolean,
     elapsedTime: Long,
-    accountName: String
+    accountName: String,
+    currentLevel: Int
 ) {
     withContext(Dispatchers.IO) {
         try {
@@ -423,7 +445,7 @@ private suspend fun updateSpreadsheet(
                 )
             )
             val body = ValueRange().setValues(values)
-            val range = "Sheet1!J$row:L$row"
+            val range = "Sheet$currentLevel!J$row:L$row"
             val result: UpdateValuesResponse = service.spreadsheets().values()
                 .update(spreadsheetId, range, body)
                 .setValueInputOption("RAW")
